@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alamatify - Pengacak Alamat Kreatif</title>
+  <meta name="description"
+    content="Acak alamat asli Anda dengan variasi huruf ganda dan angka leet agar terhindar dari filter duplikasi otomatis, namun tetap mudah dibaca oleh kurir pengiriman.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-content">
+      <a href="/" class="logo-section" style="text-decoration: none;">
+        <i class="fa-solid fa-store logo-icon"></i>
+        <h1>Alamatify</h1>
+      </a>
+      <div class="subtitle">Randomize Huruf & Angka Alamat</div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Main Grid Content -->
+    <main class="main-grid">
+      <!-- Left Column: Input and Settings -->
+      <section class="card">
+        <h2 class="card-title">Masukkan Alamat</h2>
+
+        <div class="form-group">
+          <textarea id="addressInput" rows="4" placeholder="Contoh: Jl Kenanga No 12, Desa Sukamaju, Kec Sukahati"
+            aria-label="Alamat Asli"></textarea>
+        </div>
+
+        <hr class="divider">
+
+        <h2 class="card-title">Pengaturan Acak</h2>
+
+        <!-- Slider 1: Vowel Double -->
+        <div class="form-group">
+          <label for="vowelDoubleRate">
+            Gandakan Vokal (e.g. A → AAA)
+            <span class="val-badge" id="vowelRateVal">60%</span>
+          </label>
+          <input type="range" id="vowelDoubleRate" min="0" max="100" value="60">
+        </div>
+
+        <!-- Slider 2: Consonant Double -->
+        <div class="form-group">
+          <label for="consonantDoubleRate">
+            Gandakan Konsonan (e.g. K → KK)
+            <span class="val-badge" id="consonantRateVal">30%</span>
+          </label>
+          <input type="range" id="consonantDoubleRate" min="0" max="100" value="30">
+        </div>
+
+        <!-- Slider 3: Leet / Number replace -->
+        <div class="form-group">
+          <label for="leetRate">
+            Substitusi Angka (e.g. A → 4, E → 3)
+            <span class="val-badge" id="leetRateVal">40%</span>
+          </label>
+          <input type="range" id="leetRate" min="0" max="100" value="40">
+        </div>
+
+        <!-- Toggle: Capitalization -->
+        <div class="toggle-container">
+          <span>Ubah Menjadi Kapital</span>
+          <input type="checkbox" id="capitalizeToggle" checked class="custom-checkbox">
+        </div>
+
+        <!-- Toggle: Random Punctuation -->
+        <div class="toggle-container">
+          <span>Variasikan Tanda Baca (, & .)</span>
+          <input type="checkbox" id="punctuationToggle" checked class="custom-checkbox">
+        </div>
+
+        <button class="btn btn-primary" id="generateBtn">
+          Acak Alamat Sekarang
+        </button>
+      </section>
+
+      <!-- Right Column: Outputs and variations -->
+      <section class="card">
+        <h2 class="card-title">Hasil Variasi Alamat</h2>
+
+        <div class="output-section" id="outputSection">
+          <div class="empty-state">
+            <p>Masukkan alamat asli di panel kiri untuk mulai mengacak secara instan.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      Copyright 2026
+    </footer>
+  </div>
+
+  <script>
+    const sliders = [
+      { id: 'vowelDoubleRate', badgeId: 'vowelRateVal', suffix: '%' },
+      { id: 'consonantDoubleRate', badgeId: 'consonantRateVal', suffix: '%' },
+      { id: 'leetRate', badgeId: 'leetRateVal', suffix: '%' }
+    ];
+
+    sliders.forEach(slider => {
+      const el = document.getElementById(slider.id);
+      const badge = document.getElementById(slider.badgeId);
+      el.addEventListener('input', (e) => {
+        badge.textContent = e.target.value + slider.suffix;
+        triggerRandomize(false);
+      });
+    });
+
+    document.getElementById('capitalizeToggle').addEventListener('change', () => triggerRandomize(false));
+    document.getElementById('punctuationToggle').addEventListener('change', () => triggerRandomize(false));
+    document.getElementById('addressInput').addEventListener('input', () => triggerRandomize(false));
+
+    function loadSample(text) {
+      document.getElementById('addressInput').value = text;
+      triggerRandomize(true);
+    }
+
+    function randomizeAddress(input, options) {
+      let text = options.capitalize ? input.toUpperCase() : input;
+      let result = '';
+
+      const vowels = ['A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u'];
+      const consonants = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z',
+        'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'];
+
+      const leetMap = {
+        'A': '4', 'E': '3', 'I': '1', 'O': '0', 'S': '5', 'G': '6', 'T': '7', 'B': '8',
+        'a': '4', 'e': '3', 'i': '1', 'o': '0', 's': '5', 'g': '6', 't': '7', 'b': '8'
+      };
+
+      const doubleableConsonants = ['K', 'N', 'M', 'R', 'S', 'T', 'L', 'G', 'P', 'k', 'n', 'm', 'r', 's', 't', 'l', 'g', 'p'];
+
+      for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+
+        if (vowels.includes(char)) {
+          let doubleRoll = (Math.random() * 100) < options.vowelDoubleRate;
+          let leetRoll = (Math.random() * 100) < options.leetRate;
+          let vowelBlock = char;
+
+          if (doubleRoll) {
+            let repeatCount = Math.floor(Math.random() * 2) + 2;
+            vowelBlock = char.repeat(repeatCount);
+          }
+
+          if (leetRoll && leetMap[char]) {
+            let temp = '';
+            for (let j = 0; j < vowelBlock.length; j++) {
+              if ((Math.random() * 100) < options.leetRate) {
+                temp += leetMap[vowelBlock[j]];
+              } else {
+                temp += vowelBlock[j];
+              }
+            }
+            vowelBlock = temp;
+          }
+
+          result += vowelBlock;
+
+        } else if (consonants.includes(char)) {
+          let doubleRoll = (Math.random() * 100) < options.consonantDoubleRate;
+          let leetRoll = (Math.random() * 100) < options.leetRate;
+          let consonantBlock = char;
+
+          if (doubleRoll && doubleableConsonants.includes(char)) {
+            consonantBlock = char.repeat(2);
+          }
+
+          if (leetRoll && leetMap[char]) {
+            let temp = '';
+            for (let j = 0; j < consonantBlock.length; j++) {
+              if ((Math.random() * 100) < options.leetRate) {
+                temp += leetMap[consonantBlock[j]];
+              } else {
+                temp += consonantBlock[j];
+              }
+            }
+            consonantBlock = temp;
+          }
+
+          result += consonantBlock;
+
+        } else {
+          if (char === ',' && options.randomizePunctuation) {
+            let r = Math.random();
+            if (r < 0.35) {
+              result += '. ';
+            } else if (r < 0.70) {
+              result += ' ';
+            } else {
+              result += ', ';
+            }
+            if (i + 1 < text.length && text[i + 1] === ' ') {
+              i++;
+            }
+          } else {
+            result += char;
+          }
+        }
+      }
+
+      return result.replace(/\s+/g, ' ').trim();
+    }
+
+    function estimateReadability(original, modified) {
+      let originalClean = original.replace(/[^A-Za-z]/g, '');
+      let modifiedClean = modified.replace(/[^A-Za-z]/g, '');
+
+      if (originalClean.length === 0) return 100;
+
+      let digitsCount = (modified.match(/\d/g) || []).length;
+      let digitsFactor = Math.max(0, 100 - (digitsCount / Math.max(1, originalClean.length) * 150));
+
+      let lengthRatio = modified.length / Math.max(1, original.length);
+      let lengthFactor = 100;
+      if (lengthRatio > 1.8) {
+        lengthFactor = Math.max(40, 100 - (lengthRatio - 1.8) * 100);
+      }
+
+      let score = Math.round((digitsFactor * 0.6) + (lengthFactor * 0.4));
+      return Math.min(100, Math.max(20, score));
+    }
+
+    const addressInput = document.getElementById('addressInput');
+    const outputSection = document.getElementById('outputSection');
+    const generateBtn = document.getElementById('generateBtn');
+
+    generateBtn.addEventListener('click', () => {
+      triggerRandomize(true);
+    });
+
+    function triggerRandomize(showToast = false) {
+      const rawAddress = addressInput.value.trim();
+      if (!rawAddress) {
+        outputSection.innerHTML = `
+          <div class="empty-state">
+            <p>Masukkan alamat asli di panel kiri untuk mulai mengacak secara instan.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const options = {
+        vowelDoubleRate: parseInt(document.getElementById('vowelDoubleRate').value),
+        consonantDoubleRate: parseInt(document.getElementById('consonantDoubleRate').value),
+        leetRate: parseInt(document.getElementById('leetRate').value),
+        capitalize: document.getElementById('capitalizeToggle').checked,
+        randomizePunctuation: document.getElementById('punctuationToggle').checked
+      };
+
+      outputSection.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const randAddr = randomizeAddress(rawAddress, options);
+        const readability = estimateReadability(rawAddress, randAddr);
+
+        let readabilityColor = '#26A69A';
+        let readabilityText = 'Sangat Mudah Dibaca';
+
+        if (readability < 50) {
+          readabilityColor = '#EE4D2D';
+          readabilityText = 'Sulit Dibaca';
+        } else if (readability < 75) {
+          readabilityColor = '#F5A623';
+          readabilityText = 'Cukup Mudah Dibaca';
+        }
+
+        const card = document.createElement('div');
+        card.className = 'output-card';
+        card.innerHTML = `
+          <div class="output-header">
+            <span class="variant-badge">Variasi ${i}</span>
+            <div class="readability-indicator" style="color: ${readabilityColor};">
+              <span>${readability}% (${readabilityText})</span>
+            </div>
+          </div>
+          <div class="output-text" id="outputVal-${i}">${escapeHtml(randAddr)}</div>
+          <div class="output-actions">
+            <button class="btn btn-secondary btn-small" onclick="copyVariant(${i})" title="Salin Alamat">
+              Salin
+            </button>
+          </div>
+        `;
+        outputSection.appendChild(card);
+      }
+
+      if (showToast) {
+        showNotification('Variasi alamat berhasil dibuat!');
+      }
+    }
+
+    function copyVariant(index) {
+      const textEl = document.getElementById(`outputVal-${index}`);
+      const textToCopy = textEl.innerText;
+
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        showNotification('Alamat disalin ke clipboard!');
+      }).catch(err => {
+        console.error('Gagal menyalin text: ', err);
+      });
+    }
+
+    function showNotification(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerText = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 2500);
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    loadSample('Jl Kenanga No 12, Desa Sukamaju, Kec Sukahati');
+  </script>
+</body>
+
+</html>
