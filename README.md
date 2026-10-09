@@ -25,10 +25,11 @@ Alamatify/
 
 ## Cara Menggunakan
 
-1. Masukkan alamat yang ingin divariasikan.
-2. Sesuaikan intensitas modifikasi menggunakan slider.
-3. Klik **Acak Alamat Sekarang** untuk menghasilkan tiga variasi.
-4. Klik **Salin** untuk menyalin hasil yang diinginkan.
+1. Buka https://alamatify.vercel.app/. 
+2. Masukkan alamat yang ingin divariasikan.
+3. Sesuaikan intensitas modifikasi menggunakan slider.
+4. Klik **Acak Alamat Sekarang** untuk menghasilkan tiga variasi.
+5. Klik **Salin** untuk menyalin hasil yang diinginkan.
 
 ## Lisensi
 
